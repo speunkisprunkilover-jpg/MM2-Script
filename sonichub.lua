@@ -5,7 +5,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local HttpService = game:GetService("HttpService")
 
 -- Configuration Table
 local Settings = {
@@ -28,10 +27,17 @@ local Settings = {
     ChatSpyEnabled = false,
     InfJump = false,
     Noclip = false,
+    AutoTeleport = false,
     SelectedTeleportPlayer = nil,
+    TargetTacoPlayer = "",
+    TargetFlingPlayer = "",
     TargetAvatarName = "",
     CustomNameText = "",
-    VerifiedBadgeEnabled = false
+    VerifiedBadgeEnabled = false,
+    -- MM2 Specific ESP
+    MM2_EspMurderer = false,
+    MM2_EspSheriff = false,
+    MM2_EspInnocent = false
 }
 
 -- FOV Circle Visualizer
@@ -92,9 +98,9 @@ MainFrame.Parent = RainbowBorder
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-Title.Text = "⚡ Sonic Hub ⚡"
+Title.Text = "⚡ Sonic Hub (MM2 / Universal) ⚡"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
+Title.TextSize = 16
 Title.Font = Enum.Font.SourceSansBold
 Title.Parent = MainFrame
 
@@ -103,7 +109,7 @@ local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -45)
 Scroll.Position = UDim2.new(0, 5, 0, 40)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 1300)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 1600)
 Scroll.ScrollBarThickness = 6
 Scroll.Parent = MainFrame
 
@@ -222,6 +228,20 @@ CreateSlider("FOV Size (0-500)", 0, 500, 100, function(val) Settings.FOVSize = v
 
 CreateToggle("ESP", function(state) Settings.ESPEnabled = state end)
 
+-- MM2 Specific ESP Section
+local MM2Header = Instance.new("TextLabel")
+MM2Header.Size = UDim2.new(1, -10, 0, 25)
+MM2Header.BackgroundColor3 = Color3.fromRGB(45, 30, 60)
+MM2Header.Text = "--- MM2 Role ESP ---"
+MM2Header.TextColor3 = Color3.fromRGB(255, 170, 255)
+MM2Header.Font = Enum.Font.SourceSansBold
+MM2Header.TextSize = 14
+MM2Header.Parent = Scroll
+
+CreateToggle("MM2 ESP Murderer", function(state) Settings.MM2_EspMurderer = state end)
+CreateToggle("MM2 ESP Sheriff", function(state) Settings.MM2_EspSheriff = state end)
+CreateToggle("MM2 ESP Innocent", function(state) Settings.MM2_EspInnocent = state end)
+
 -- ESP Colors Selection
 local ColorFrame = Instance.new("Frame")
 ColorFrame.Size = UDim2.new(1, -10, 0, 40)
@@ -271,6 +291,113 @@ CreateSlider("Spin Bot Speed (0-50)", 0, 50, 25, function(val) Settings.SpinBotS
 
 CreateToggle("Roblox Chat Spy", function(state) Settings.ChatSpyEnabled = state end)
 
+-- Give Someone Taco Section
+local TacoFrame = Instance.new("Frame")
+TacoFrame.Size = UDim2.new(1, -10, 0, 75)
+TacoFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+TacoFrame.Parent = Scroll
+
+local TacoLbl = Instance.new("TextLabel")
+TacoLbl.Size = UDim2.new(1, 0, 0, 20)
+TacoLbl.BackgroundTransparency = 1
+TacoLbl.Text = "Give Taco (Search Username)"
+TacoLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+TacoLbl.Font = Enum.Font.SourceSans
+TacoLbl.TextSize = 13
+TacoLbl.Parent = TacoFrame
+
+local TacoBox = Instance.new("TextBox")
+TacoBox.Size = UDim2.new(1, -10, 0, 25)
+TacoBox.Position = UDim2.new(0, 5, 0, 22)
+TacoBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+TacoBox.Text = ""
+TacoBox.PlaceholderText = "Type player name..."
+TacoBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TacoBox.TextSize = 12
+TacoBox.Parent = TacoFrame
+
+TacoBox.FocusLost:Connect(function()
+    Settings.TargetTacoPlayer = TacoBox.Text
+end)
+
+local TacoBtn = Instance.new("TextButton")
+TacoBtn.Size = UDim2.new(1, -10, 0, 22)
+TacoBtn.Position = UDim2.new(0, 5, 0, 50)
+TacoBtn.BackgroundColor3 = Color3.fromRGB(255, 128, 0)
+TacoBtn.Text = "Give Taco"
+TacoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+TacoBtn.Font = Enum.Font.SourceSansBold
+TacoBtn.TextSize = 13
+TacoBtn.Parent = TacoFrame
+
+TacoBtn.MouseButton1Click:Connect(function()
+    local query = TacoBox.Text ~= "" and TacoBox.Text or Settings.TargetTacoPlayer
+    for _, p in ipairs(Players:GetPlayers()) do
+        if string.sub(string.lower(p.Name), 1, string.len(query)) == string.lower(query) then
+            print("[SonicHub] Gave taco to: " .. p.Name)
+            -- Insert game specific tool/item give remote event code here if supported
+        end
+    end
+end)
+
+-- Fling Player Section
+local FlingFrame = Instance.new("Frame")
+FlingFrame.Size = UDim2.new(1, -10, 0, 75)
+FlingFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+FlingFrame.Parent = Scroll
+
+local FlingLbl = Instance.new("TextLabel")
+FlingLbl.Size = UDim2.new(1, 0, 0, 20)
+FlingLbl.BackgroundTransparency = 1
+FlingLbl.Text = "Fling Player (Search Username)"
+FlingLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlingLbl.Font = Enum.Font.SourceSans
+FlingLbl.TextSize = 13
+FlingLbl.Parent = FlingFrame
+
+local FlingBox = Instance.new("TextBox")
+FlingBox.Size = UDim2.new(1, -10, 0, 25)
+FlingBox.Position = UDim2.new(0, 5, 0, 22)
+FlingBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+FlingBox.Text = ""
+FlingBox.PlaceholderText = "Type player name..."
+FlingBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlingBox.TextSize = 12
+FlingBox.Parent = FlingFrame
+
+FlingBox.FocusLost:Connect(function()
+    Settings.TargetFlingPlayer = FlingBox.Text
+end)
+
+local FlingBtn = Instance.new("TextButton")
+FlingBtn.Size = UDim2.new(1, -10, 0, 22)
+FlingBtn.Position = UDim2.new(0, 5, 0, 50)
+FlingBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+FlingBtn.Text = "Fling Target"
+FlingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlingBtn.Font = Enum.Font.SourceSansBold
+FlingBtn.TextSize = 13
+FlingBtn.Parent = FlingFrame
+
+FlingBtn.MouseButton1Click:Connect(function()
+    local query = FlingBox.Text ~= "" and FlingBox.Text or Settings.TargetFlingPlayer
+    for _, p in ipairs(Players:GetPlayers()) do
+        if string.sub(string.lower(p.Name), 1, string.len(query)) == string.lower(query) then
+            if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local targetHrp = p.Character.HumanoidRootPart
+                local myHrp = LocalPlayer.Character.HumanoidRootPart
+                local bav = Instance.new("BodyAngularVelocity")
+                bav.MaxTorque = Vector3.new(0, math.huge, 0)
+                bav.AngularVelocity = Vector3.new(0, 9999, 0)
+                bav.Parent = myHrp
+                myHrp.CFrame = targetHrp.CFrame
+                task.wait(0.2)
+                bav:Destroy()
+            end
+        end
+    end
+end)
+
 -- Avatar Changer Section
 local AvatarFrame = Instance.new("Frame")
 AvatarFrame.Size = UDim2.new(1, -10, 0, 80)
@@ -318,7 +445,6 @@ AvatarBtn.MouseButton1Click:Connect(function()
         return Players:GetUserIdFromNameAsync(targetName)
     end)
     if success and userId and LocalPlayer.Character then
-        local humanoidDescription
         local successHumanoid, err = pcall(function()
             return Players:GetHumanoidDescriptionFromUserId(userId)
         end)
@@ -374,6 +500,7 @@ end)
 
 CreateToggle("Infinite Jump", function(state) Settings.InfJump = state end)
 CreateToggle("Noclip", function(state) Settings.Noclip = state end)
+CreateToggle("Auto Teleport to Target", function(state) Settings.AutoTeleport = state end)
 
 -- Teleport to Player UI Section
 local TpFrame = Instance.new("Frame")
@@ -404,6 +531,19 @@ TpListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 TpListLayout.Parent = TpScroll
 
 local function RefreshPlayerList()
+    for _, child in ipairs(TpScroll:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    local totalWidth = 0
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local pBtn = Instance.new("TextButton")
+            pBtn.Size = UDim2.new(0, 90, 1, 0)
+            pBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
+            pBtn.Text = p.Name
+            pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            pBtn.TextSize = 12
+            pBtn.Parent = Tplocal function RefreshPlayerList()
     for _, child in ipairs(TpScroll:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
@@ -480,6 +620,15 @@ RunService.RenderStepped:Connect(function()
         FOVCircle.Visible = false
     end
 
+    -- Auto Teleport Loop
+    if Settings.AutoTeleport and Settings.SelectedTeleportPlayer and Settings.SelectedTeleportPlayer.Character then
+        local targetHrp = Settings.SelectedTeleportPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if targetHrp and myHrp then
+            myHrp.CFrame = targetHrp.CFrame + Vector3.new(0, 3, 0)
+        end
+    end
+
     -- Aimbot Loop
     if Settings.AimbotEnabled then
         local target = GetClosestPlayer()
@@ -535,7 +684,7 @@ RunService.RenderStepped:Connect(function()
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = false
     end
 
-        -- Noclip Loop
+    -- Noclip Loop
     if Settings.Noclip and LocalPlayer.Character then
         for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -544,7 +693,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Hitbox & ESP Loop
+    -- Hitbox, General ESP & MM2 Role ESP Loop
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
             local hrp = player.Character:FindFirstChild("HumanoidRootPart")
@@ -558,14 +707,56 @@ RunService.RenderStepped:Connect(function()
                     hrp.Transparency = 1
                 end
 
+                -- MM2 Role Detection / ESP Logic
+                local isMurderer = false
+                local isSheriff = false
+                local isInnocent = false
+
+                local backpack = player:FindFirstChildOfClass("Backpack")
+                local function checkItem(item)
+                    local name = string.lower(item.Name)
+                    if name:find("knife") or name:find("revolver") or name:find("gun") then
+                        if name:find("knife") then isMurderer = true end
+                        if name:find("gun") or name:find("revolver") then isSheriff = true end
+                    end
+                end
+                
+                if player.Character then
+                    for _, item in ipairs(player.Character:GetChildren()) do checkItem(item) end
+                end
+                if backpack then
+                    for _, item in ipairs(backpack:GetChildren()) do checkItem(item) end
+                end
+                
+                if not isMurderer and not isSheriff then
+                    isInnocent = true
+                end
+
                 local highlight = player.Character:FindFirstChild("SonicESP")
-                if Settings.ESPEnabled then
+                local activeEsp = false
+                local roleColor = Settings.ESPColor
+
+                if Settings.MM2_EspMurderer and isMurderer then
+                    roleColor = Color3.fromRGB(255, 0, 0)
+                    activeEsp = true
+                elseif Settings.MM2_EspSheriff and isSheriff then
+                    roleColor = Color3.fromRGB(0, 0, 255)
+                    activeEsp = true
+                elseif Settings.MM2_EspInnocent and isInnocent then
+                    roleColor = Color3.fromRGB(0, 255, 0)
+                    activeEsp = true
+                elseif Settings.ESPEnabled then
+                    roleColor = Settings.ESPColor
+                    activeEsp = true
+                end
+
+                if activeEsp then
                     if not highlight then
                         highlight = Instance.new("Highlight")
                         highlight.Name = "SonicESP"
                         highlight.Parent = player.Character
                     end
-                    highlight.FillColor = Settings.ESPColor
+                    highlight.FillColor = roleColor
                     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                     highlight.Enabled = true
                 else
@@ -582,3 +773,4 @@ UserInputService.JumpRequest:Connect(function()
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
+            
