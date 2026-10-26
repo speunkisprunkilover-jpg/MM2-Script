@@ -1,4 +1,4 @@
--- Hitbox Expander Script (Universal / Game-Friendly)
+-- Hitbox Expander Script (Completely Invisible)
 -- Dimensions: Sides (26), Top/Bottom (25), Forward/Backward (28)
 -- Designed for Delta Executor & Mobile/PC Compatibility
 
@@ -18,7 +18,7 @@ local SizeZ = 28 -- Forward and Backward (Depth)
 local OriginalSizes = {}
 
 ----------------------------------------------------------------
--- Hitbox Expansion Logic
+-- Hitbox Expansion Logic (Completely Invisible)
 ----------------------------------------------------------------
 local function updateHitboxes()
     for _, player in ipairs(Players:GetPlayers()) do
@@ -36,10 +36,8 @@ local function updateHitboxes()
                     
                     if Hitbox_Enabled then
                         humanoidRootPart.Size = Vector3.new(SizeX, SizeY, SizeZ)
-                        humanoidRootPart.Transparency = 0.7 -- Semi-transparent so you can see it
-                        humanoidRootPart.BrickColor = BrickColor.new("Really red")
-                        humanoidRootPart.Material = Enum.Material.Neon
-                        humanoidRootPart.CanCollide = false -- Prevent getting stuck or shoved around
+                        humanoidRootPart.Transparency = 1 -- Completely invisible
+                        humanoidRootPart.CanCollide = false -- Prevent physics interference
                     else
                         if OriginalSizes[player] then
                             humanoidRootPart.Size = OriginalSizes[player]
