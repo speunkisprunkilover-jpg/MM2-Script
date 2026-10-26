@@ -37,7 +37,10 @@ local Settings = {
     -- MM2 Specific ESP
     MM2_EspMurderer = false,
     MM2_EspSheriff = false,
-    MM2_EspInnocent = false
+    MM2_EspInnocent = false,
+    -- Rivals Specific
+    Rivals_FPSBooster = false,
+    Rivals_Aimbot = false
 }
 
 -- FOV Circle Visualizer
@@ -98,9 +101,9 @@ MainFrame.Parent = RainbowBorder
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-Title.Text = "⚡ Sonic Hub (MM2 / Universal) ⚡"
+Title.Text = "⚡ Sonic Hub (Rivals / MM2) ⚡"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
+Title.TextSize = 15
 Title.Font = Enum.Font.SourceSansBold
 Title.Parent = MainFrame
 
@@ -109,7 +112,7 @@ local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -45)
 Scroll.Position = UDim2.new(0, 5, 0, 40)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 1600)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 1800)
 Scroll.ScrollBarThickness = 6
 Scroll.Parent = MainFrame
 
@@ -226,7 +229,32 @@ CreateToggle("Silent Aim", function(state) Settings.SilentAimEnabled = state end
 CreateSlider("Hit Chance (0-100)", 0, 100, 100, function(val) Settings.HitChance = val end)
 CreateSlider("FOV Size (0-500)", 0, 500, 100, function(val) Settings.FOVSize = val end)
 
-CreateToggle("ESP", function(state) Settings.ESPEnabled = state end)
+-- Rivals Specific Section
+local RivalsHeader = Instance.new("TextLabel")
+RivalsHeader.Size = UDim2.new(1, -10, 0, 25)
+RivalsHeader.BackgroundColor3 = Color3.fromRGB(20, 50, 60)
+RivalsHeader.Text = "--- Rivals Script ---"
+RivalsHeader.TextColor3 = Color3.fromRGB(170, 255, 255)
+RivalsHeader.Font = Enum.Font.SourceSansBold
+RivalsHeader.TextSize = 14
+RivalsHeader.Parent = Scroll
+
+CreateToggle("Rivals FPS Booster (Mobile)", function(state)
+    Settings.Rivals_FPSBooster = state
+    if state then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
+        UserSettings():GetService("UserGameSettings").SavedQualityLevel = Enum.SavedQualityLevel.Level1
+    end
+end)
+
+CreateToggle("Rivals Aimbot", function(state) Settings.Rivals_Aimbot = state end)
 
 -- MM2 Specific ESP Section
 local MM2Header = Instance.new("TextLabel")
@@ -241,6 +269,8 @@ MM2Header.Parent = Scroll
 CreateToggle("MM2 ESP Murderer", function(state) Settings.MM2_EspMurderer = state end)
 CreateToggle("MM2 ESP Sheriff", function(state) Settings.MM2_EspSheriff = state end)
 CreateToggle("MM2 ESP Innocent", function(state) Settings.MM2_EspInnocent = state end)
+
+CreateToggle("ESP", function(state) Settings.ESPEnabled = state end)
 
 -- ESP Colors Selection
 local ColorFrame = Instance.new("Frame")
@@ -335,7 +365,6 @@ TacoBtn.MouseButton1Click:Connect(function()
     for _, p in ipairs(Players:GetPlayers()) do
         if string.sub(string.lower(p.Name), 1, string.len(query)) == string.lower(query) then
             print("[SonicHub] Gave taco to: " .. p.Name)
-            -- Insert game specific tool/item give remote event code here if supported
         end
     end
 end)
@@ -543,19 +572,6 @@ local function RefreshPlayerList()
             pBtn.Text = p.Name
             pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
             pBtn.TextSize = 12
-            pBtn.Parent = Tplocal function RefreshPlayerList()
-    for _, child in ipairs(TpScroll:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    local totalWidth = 0
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            local pBtn = Instance.new("TextButton")
-            pBtn.Size = UDim2.new(0, 90, 1, 0)
-            pBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
-            pBtn.Text = p.Name
-            pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            pBtn.TextSize = 12
             pBtn.Parent = TpScroll
             pBtn.MouseButton1Click:Connect(function()
                 Settings.SelectedTeleportPlayer = p
@@ -612,7 +628,7 @@ RunService.RenderStepped:Connect(function()
     RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
 
     -- FOV Circle Drawing Update
-    if Settings.AimbotEnabled or Settings.SilentAimEnabled then
+    if Settings.AimbotEnabled or Settings.SilentAimEnabled or Settings.Rivals_Aimbot then
         FOVCircle.Visible = true
         FOVCircle.Radius = Settings.FOVSize
         FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
@@ -629,8 +645,8 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Aimbot Loop
-    if Settings.AimbotEnabled then
+    -- Aimbot / Rivals Aimbot Loop
+    if Settings.AimbotEnabled or Settings.Rivals_Aimbot then
         local target = GetClosestPlayer()
         if target and target.Character and target.Character:FindFirstChild("Head") then
             local targetPos = target.Character.Head.Position
@@ -773,4 +789,3 @@ UserInputService.JumpRequest:Connect(function()
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
-            
