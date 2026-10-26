@@ -13,7 +13,6 @@ local Settings = {
     ESPEnabled = false,
     ESPColor = Color3.fromRGB(255, 0, 0),
     HitboxExpander = false,
-    HitboxSize = 10,
     CFrameSpeed = false,
     SpeedMultiplier = 0, -- Slider range 0-10
     InfJump = false,
@@ -280,14 +279,14 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ESP & Hitbox Expander Loop
+    -- ESP & Custom Hitbox Expander Loop
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
             local hrp = player.Character:FindFirstChild("HumanoidRootPart")
             if hrp then
-                -- Hitbox Expander
+                -- Hitbox Expander (Customized Dimensions: Sides=25, Top/Bottom=25, Forward/Backward=28)
                 if Settings.HitboxExpander then
-                    hrp.Size = Vector3.new(12, 12, 12)
+                    hrp.Size = Vector3.new(25, 25, 28)
                     hrp.Transparency = 0.7
                     hrp.CanCollide = false
                 else
