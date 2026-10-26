@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local HttpService = game:GetService("HttpService")
 
 -- Configuration Table
 local Settings = {
@@ -22,12 +23,15 @@ local Settings = {
     JumpPowerVal = 50,
     FlightEnabled = false,
     FlightSpeed = 50,
-    InfJump = false,
-    Noclip = false,
-    ChatSpyEnabled = false,
     SpinBotEnabled = false,
     SpinBotSpeed = 25,
-    SelectedTeleportPlayer = nil
+    ChatSpyEnabled = false,
+    InfJump = false,
+    Noclip = false,
+    SelectedTeleportPlayer = nil,
+    TargetAvatarName = "",
+    CustomNameText = "",
+    VerifiedBadgeEnabled = false
 }
 
 -- FOV Circle Visualizer
@@ -99,7 +103,7 @@ local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -45)
 Scroll.Position = UDim2.new(0, 5, 0, 40)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 1050)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 1300)
 Scroll.ScrollBarThickness = 6
 Scroll.Parent = MainFrame
 
@@ -267,6 +271,107 @@ CreateSlider("Spin Bot Speed (0-50)", 0, 50, 25, function(val) Settings.SpinBotS
 
 CreateToggle("Roblox Chat Spy", function(state) Settings.ChatSpyEnabled = state end)
 
+-- Avatar Changer Section
+local AvatarFrame = Instance.new("Frame")
+AvatarFrame.Size = UDim2.new(1, -10, 0, 80)
+AvatarFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+AvatarFrame.Parent = Scroll
+
+local AvatarLbl = Instance.new("TextLabel")
+AvatarLbl.Size = UDim2.new(1, 0, 0, 20)
+AvatarLbl.BackgroundTransparency = 1
+AvatarLbl.Text = "Avatar Changer (Target Username)"
+AvatarLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+AvatarLbl.Font = Enum.Font.SourceSans
+AvatarLbl.TextSize = 13
+AvatarLbl.Parent = AvatarFrame
+
+local AvatarBox = Instance.new("TextBox")
+AvatarBox.Size = UDim2.new(1, -10, 0, 25)
+AvatarBox.Position = UDim2.new(0, 5, 0, 22)
+AvatarBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+AvatarBox.Text = ""
+AvatarBox.PlaceholderText = "Enter username here..."
+AvatarBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+AvatarBox.TextSize = 12
+AvatarBox.Parent = AvatarFrame
+
+AvatarBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        Settings.TargetAvatarName = AvatarBox.Text
+    end
+end)
+
+local AvatarBtn = Instance.new("TextButton")
+AvatarBtn.Size = UDim2.new(1, -10, 0, 25)
+AvatarBtn.Position = UDim2.new(0, 5, 0, 50)
+AvatarBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+AvatarBtn.Text = "Apply Avatar (Yes)"
+AvatarBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AvatarBtn.Font = Enum.Font.SourceSansBold
+AvatarBtn.TextSize = 13
+AvatarBtn.Parent = AvatarFrame
+
+AvatarBtn.MouseButton1Click:Connect(function()
+    local targetName = AvatarBox.Text ~= "" and AvatarBox.Text or Settings.TargetAvatarName
+    local success, userId = pcall(function()
+        return Players:GetUserIdFromNameAsync(targetName)
+    end)
+    if success and userId and LocalPlayer.Character then
+        local humanoidDescription
+        local successHumanoid, err = pcall(function()
+            return Players:GetHumanoidDescriptionFromUserId(userId)
+        end)
+        if successHumanoid and err and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ApplyDescription(err)
+        end
+    end
+end)
+
+-- Name Changer Section
+local NameFrame = Instance.new("Frame")
+NameFrame.Size = UDim2.new(1, -10, 0, 60)
+NameFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+NameFrame.Parent = Scroll
+
+local NameLbl = Instance.new("TextLabel")
+NameLbl.Size = UDim2.new(1, 0, 0, 20)
+NameLbl.BackgroundTransparency = 1
+NameLbl.Text = "Name Changer (Display Name)"
+NameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameLbl.Font = Enum.Font.SourceSans
+NameLbl.TextSize = 13
+NameLbl.Parent = NameFrame
+
+local NameBox = Instance.new("TextBox")
+NameBox.Size = UDim2.new(1, -10, 0, 28)
+NameBox.Position = UDim2.new(0, 5, 0, 25)
+NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+NameBox.Text = ""
+NameBox.PlaceholderText = "Type custom name..."
+NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameBox.TextSize = 12
+NameBox.Parent = NameFrame
+
+NameBox.Changed:Connect(function()
+    Settings.CustomNameText = NameBox.Text
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local char = LocalPlayer.Character
+        if char:FindFirstChild("Head") and char.Head:FindFirstChildOfClass("BillboardGui") then
+            local tag = char.Head:FindFirstChildOfClass("BillboardGui")
+            for _, label in ipairs(tag:GetDescendants()) do
+                if label:IsA("TextLabel") then
+                    label.Text = Settings.CustomNameText .. (Settings.VerifiedBadgeEnabled and " [✔]" or "")
+                end
+            end
+        end
+    end
+end)
+
+CreateToggle("Fake Verified Badge", function(state)
+    Settings.VerifiedBadgeEnabled = state
+end)
+
 CreateToggle("Infinite Jump", function(state) Settings.InfJump = state end)
 CreateToggle("Noclip", function(state) Settings.Noclip = state end)
 
@@ -350,7 +455,6 @@ end)
 local function SetupChatSpy(player)
     player.Chatted:Connect(function(msg)
         if Settings.ChatSpyEnabled then
-            -- Prints chat logs to output/console so you can see all server chatter/friends instantly
             print("[SonicHub ChatSpy] " .. player.Name .. ": " .. msg)
         end
     end)
@@ -431,9 +535,8 @@ RunService.RenderStepped:Connect(function()
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = false
     end
 
-    -- Noclip Loop
+        -- Noclip Loop
     if Settings.Noclip and LocalPlayer.Character then
-        print(LocalPlayer.Name) -- dummy reference for safe iteration
         for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = false
