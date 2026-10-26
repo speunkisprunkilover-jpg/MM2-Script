@@ -18,10 +18,15 @@ local Settings = {
     HitboxExpander = false,
     CFrameSpeed = false,
     SpeedMultiplier = 0,
+    JumpBoostEnabled = false,
+    JumpPowerVal = 50,
     FlightEnabled = false,
     FlightSpeed = 50,
     InfJump = false,
     Noclip = false,
+    ChatSpyEnabled = false,
+    SpinBotEnabled = false,
+    SpinBotSpeed = 25,
     SelectedTeleportPlayer = nil
 }
 
@@ -94,7 +99,7 @@ local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -45)
 Scroll.Position = UDim2.new(0, 5, 0, 40)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 850)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 1050)
 Scroll.ScrollBarThickness = 6
 Scroll.Parent = MainFrame
 
@@ -251,8 +256,16 @@ CreateToggle("Hitbox Expander", function(state) Settings.HitboxExpander = state 
 CreateToggle("CFrame Speed Boost", function(state) Settings.CFrameSpeed = state end)
 CreateSlider("CFrame Speed (0-10)", 0, 10, 0, function(val) Settings.SpeedMultiplier = val end)
 
+CreateToggle("Jump Boost", function(state) Settings.JumpBoostEnabled = state end)
+CreateSlider("Jump Boost (0-100)", 0, 100, 50, function(val) Settings.JumpPowerVal = val end)
+
 CreateToggle("Flight", function(state) Settings.FlightEnabled = state end)
 CreateSlider("Flight Speed (0-100)", 0, 100, 50, function(val) Settings.FlightSpeed = val end)
+
+CreateToggle("Spin Bot", function(state) Settings.SpinBotEnabled = state end)
+CreateSlider("Spin Bot Speed (0-50)", 0, 50, 25, function(val) Settings.SpinBotSpeed = val end)
+
+CreateToggle("Roblox Chat Spy", function(state) Settings.ChatSpyEnabled = state end)
 
 CreateToggle("Infinite Jump", function(state) Settings.InfJump = state end)
 CreateToggle("Noclip", function(state) Settings.Noclip = state end)
@@ -333,6 +346,21 @@ TpBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Chat Spy Listener Integration
+local function SetupChatSpy(player)
+    player.Chatted:Connect(function(msg)
+        if Settings.ChatSpyEnabled then
+            -- Prints chat logs to output/console so you can see all server chatter/friends instantly
+            print("[SonicHub ChatSpy] " .. player.Name .. ": " .. msg)
+        end
+    end)
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    SetupChatSpy(p)
+end
+Players.PlayerAdded:Connect(SetupChatSpy)
+
 -- Main Engine Loop
 RunService.RenderStepped:Connect(function()
     -- Rainbow Border Logic
@@ -359,23 +387,29 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Silent Aim Hook / Hit Chance Logic
-    if Settings.SilentAimEnabled then
-        local target = GetClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("Head") then
-            local roll = math.random(1, 100)
-            if roll <= Settings.HitChance then
-                -- Silent aim hit redirection intercept can be hooked here depending on the specific game's remote events
-            end
-        end
-    end
-
     -- CFrame Speed Boost Loop
     if Settings.CFrameSpeed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local hrp = LocalPlayer.Character.HumanoidRootPart
         local moveDir = LocalPlayer.Character:FindFirstChildOfClass("Humanoid").MoveDirection
         if moveDir.Magnitude > 0 then
             hrp.CFrame = hrp.CFrame + (moveDir * (Settings.SpeedMultiplier * 0.2))
+        end
+    end
+
+    -- Spin Bot Loop
+    if Settings.SpinBotEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(Settings.SpinBotSpeed * 4), 0)
+    end
+
+    -- Jump Boost Loop
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        hum.UseJumpPower = true
+        if Settings.JumpBoostEnabled then
+            hum.JumpPower = 50 + (Settings.JumpPowerVal * 2.5)
+        else
+            hum.JumpPower = 50
         end
     end
 
@@ -393,12 +427,13 @@ RunService.RenderStepped:Connect(function()
             moveVector = moveVector - camCFrame.LookVector
         end
         hrp.Velocity = moveVector * (Settings.FlightSpeed * 2)
-    elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+    elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") and not Settings.FlightEnabled then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = false
     end
 
     -- Noclip Loop
     if Settings.Noclip and LocalPlayer.Character then
+        print(LocalPlayer.Name) -- dummy reference for safe iteration
         for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = false
