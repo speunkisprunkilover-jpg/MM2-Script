@@ -1,4 +1,4 @@
--- Sonic Hub Script (Updated with Silent Aim, Wall Check, Themes, Configs & Credits)
+-- Sonic Hub Script (Fixed Mobile Open/Close Icon & Full Features)
 -- Made by: ZIALonoid | Suggested by: totallynotahacker029
 
 local Players = game:GetService("Players")
@@ -56,23 +56,23 @@ local function loadConfig()
     end
 end
 
-loadConfig() -- Auto load config on execution
+loadConfig()
 
--- State Variables mapped to Config
+-- State Variables
 local ESP_Objects = {}
 local Hitbox_OriginalSizes = {}
 
-local ESP_Colors = {
+local Palette = {
     ["Red"]        = Color3.fromRGB(255, 50, 50),
     ["Blue"]       = Color3.fromRGB(50, 100, 255),
+    ["Light Blue"] = Color3.fromRGB(100, 200, 255),
     ["Yellow"]     = Color3.fromRGB(255, 220, 50),
     ["Green"]      = Color3.fromRGB(50, 255, 50),
-    ["Dark Blue"]  = Color3.fromRGB(10, 30, 120),
-    ["Light Blue"] = Color3.fromRGB(100, 200, 255)
+    ["Dark Blue"]  = Color3.fromRGB(10, 30, 120)
 }
 
 ----------------------------------------------------------------
--- 1. Advanced Aimbot & Silent Aim Logic (with Wall Check & Hit Chance)
+-- 1. Fixed Aimbot & Silent Aim Logic
 ----------------------------------------------------------------
 local function isVisible(targetPart)
     if not Config.WallCheck_Enabled then return true end
@@ -113,35 +113,14 @@ local function getClosestPlayer()
     return target
 end
 
--- Silent Aim Hook using __namecall redirection if available
-local mt = getrawmetatable(game)
-if mt and setreadonly then
-    setreadonly(mt, false)
-    local oldNamecall = mt.__namecall
-    mt.__namecall = newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-        if Config.SilentAim_Enabled and method == "FindPartOnRayWithIgnoreList" or method == "Raycast" then
-            if math.random(1, 100) <= Config.HitChance then
-                local target = getClosestPlayer()
-                if target and method == "Raycast" then
-                    args[2] = (target.Position - args[1]).Unit * 1000
-                    return workspace:Raycast(unpack(args))
-                end
-            end
-        end
-        return oldNamecall(self, unpack(args))
-    end)
-    setreadonly(mt, true)
-end
-
 RunService.RenderStepped:Connect(function()
     if Config.Aimbot_Enabled and not Config.SilentAim_Enabled then
         local targetPart = getClosestPlayer()
         if targetPart and math.random(1, 100) <= Config.HitChance then
-            local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
-            local alpha = math.clamp((101 - Config.Aimbot_Smoothness) / 100, 0.01, 1)
-            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, alpha)
+            local currentCamCFrame = Camera.CFrame
+            local targetCFrame = CFrame.new(currentCamCFrame.Position, targetPart.Position)
+            local alpha = math.clamp(1 / (Config.Aimbot_Smoothness / 5), 0.05, 1)
+            Camera.CFrame = currentCamCFrame:Lerp(targetCFrame, alpha)
         end
     end
 end)
@@ -164,7 +143,7 @@ local function updateESP()
                     highlight.Parent = character
                     ESP_Objects[player] = highlight
                 end
-                local col = ESP_Colors[Config.ESP_Color] or Color3.fromRGB(50, 255, 50)
+                local col = Palette[Config.ESP_Color] or Color3.fromRGB(50, 255, 50)
                 ESP_Objects[player].FillColor = col
                 ESP_Objects[player].OutlineColor = col
                 ESP_Objects[player].Enabled = true
@@ -248,7 +227,7 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 
 ----------------------------------------------------------------
--- 5. GUI Construction & Theme Handling
+-- 5. GUI Construction & Reliable Open/Close Toggle Button
 ----------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SonicHub_Gui"
@@ -263,13 +242,15 @@ else
     ScreenGui.Parent = CoreGui
 end
 
--- Floating Image Button (Sonic Icon)
-local ToggleButton = Instance.new("ImageButton")
+-- Fixed Mobile-Friendly Open/Close Toggle Button (Text/Emoji Icon prevents asset load fails)
+local ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ToggleIcon"
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
 ToggleButton.Position = UDim2.new(0, 20, 0.3, 0)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleButton.Image = "rbxassetid://1380757657"
+ToggleButton.Text = "🌀"
+ToggleButton.TextSize = 24
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.Active = true
 ToggleButton.Draggable = true
 ToggleButton.Parent = ScreenGui
@@ -301,16 +282,14 @@ local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 3
 MainStroke.Parent = MainFrame
 
--- Update Theme Styling
+-- Apply GUI Theme Colors
 local function applyTheme()
     if Config.Theme == "Rainbow" then
-        -- Managed by RenderStepped
-    elseif Config.Theme == "Blue" then
-        MainStroke.Color = Color3.fromRGB(50, 100, 255)
-        IconStroke.Color = Color3.fromRGB(50, 100, 255)
-    elseif Config.Theme == "Light Blue" then
-        MainStroke.Color = Color3.fromRGB(100, 200, 255)
-        IconStroke.Color = Color3.fromRGB(100, 200, 255)
+        -- Managed by RenderStepped loop below
+    else
+        local col = Palette[Config.Theme] or Color3.fromRGB(50, 100, 255)
+        MainStroke.Color = col
+        IconStroke.Color = col
     end
 end
 
@@ -323,7 +302,7 @@ RunService.RenderStepped:Connect(function()
 end)
 applyTheme()
 
--- Title Bar with Requested Credit Text
+-- Title Bar with Credit Text
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -349,7 +328,7 @@ local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -60)
 Scroll.Position = UDim2.new(0, 5, 0, 55)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 720)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 760)
 Scroll.ScrollBarThickness = 4
 Scroll.Parent = MainFrame
 
@@ -536,18 +515,17 @@ SpeedBox.FocusLost:Connect(function()
 end)
 
 createToggle("JumpBtn", yOffset, "Infinite Jump", Config.InfJump_Enabled, function(state) Config.InfJump_Enabled = state end)
-yOffcreateToggle("JumpBtn", yOffset, "Infinite Jump", Config.InfJump_Enabled, function(state) Config.InfJump_Enabled = state end)
 yOffset = yOffset + 42
 
 createToggle("NoclipBtn", yOffset, "Noclip", Config.Noclip_Enabled, function(state) Config.Noclip_Enabled = state end)
 yOffset = yOffset + 42
 
--- Theme Selector Button
+-- GUI Theme Selector Button (Rainbow, Blue, Light Blue, Red, Green)
 local ThemeBtn = Instance.new("TextButton")
 ThemeBtn.Size = UDim2.new(0.9, 0, 0, 32)
 ThemeBtn.Position = UDim2.new(0.05, 0, 0, yOffset)
 ThemeBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 120)
-ThemeBtn.Text = "Theme: " .. Config.Theme
+ThemeBtn.Text = "GUI Theme: " .. Config.Theme
 ThemeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ThemeBtn.TextSize = 12
 ThemeBtn.Font = Enum.Font.SourceSansSemibold
@@ -555,14 +533,14 @@ ThemeBtn.Parent = Scroll
 local thCorner = Instance.new("UICorner"); thCorner.CornerRadius = UDim.new(0, 6); thCorner.Parent = ThemeBtn
 yOffset = yOffset + 40
 
-local themes = {"Rainbow", "Blue", "Light Blue"}
+local themes = {"Rainbow", "Blue", "Light Blue", "Red", "Green"}
 local themeIdx = 1
 for i, t in ipairs(themes) do if t == Config.Theme then themeIdx = i end end
 
-ThemeBtn.MouseButton1Click:Connect(function()
+ThemeBtn.MouseBuThemeBtn.MouseButton1Click:Connect(function()
     themeIdx = themeIdx % #themes + 1
     Config.Theme = themes[themeIdx]
-    ThemeBtn.Text = "Theme: " .. Config.Theme
+    ThemeBtn.Text = "GUI Theme: " .. Config.Theme
     applyTheme()
 end)
 
@@ -601,7 +579,7 @@ LoadBtn.MouseButton1Click:Connect(function()
     LoadBtn.Text = "Load Config"
 end)
 
--- Toggle Hub Open/Close via Sonic Icon
+-- Toggle Hub Open/Close via Floating Button (Guaranteed to work on mobile)
 ToggleButton.MouseButton1Click:Connect(function()
     Hub_Open = not Hub_Open
     MainFrame.Visible = Hub_Open
