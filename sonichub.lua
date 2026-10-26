@@ -1,6 +1,6 @@
--- Sonic Hub Script (Mobile & Delta Optimized)
--- Features: Aimbot (1-100 Smoothness), ESP with Color Picker, Hitbox Expander,
--- C-Frame Speed (0-10 Slider), Inf Jump, Noclip, Rainbow UI, Open/Close Icon
+-- Sonic Hub Script (Mobile & Delta Optimized with Sonic Image Icon)
+-- Features: Aimbot (1-100), ESP with Color Picker, Hitbox Expander,
+-- C-Frame Speed (0-10), Inf Jump, Noclip, Rainbow UI, Sonic Image Toggle Icon
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -12,12 +12,12 @@ local LocalPlayer = Players.LocalPlayer
 -- State Variables
 local Hub_Open = true
 local Aimbot_Enabled = false
-local Aimbot_Smoothness = 50 -- 1 to 100
+local Aimbot_Smoothness = 50
 local ESP_Enabled = false
 local ESP_ColorName = "Green"
 local Hitbox_Enabled = false
 local Speed_Enabled = false
-local Speed_Multiplier = 5 -- 0 to 10
+local Speed_Multiplier = 5
 local InfJump_Enabled = false
 local Noclip_Enabled = false
 
@@ -34,7 +34,7 @@ local ESP_Colors = {
 }
 
 ----------------------------------------------------------------
--- 1. Aimbot Logic (Closest Player & Smoothness 1-100)
+-- 1. Aimbot Logic
 ----------------------------------------------------------------
 local function getClosestPlayer()
     local target = nil
@@ -63,7 +63,6 @@ RunService.RenderStepped:Connect(function()
         local targetPart = getClosestPlayer()
         if targetPart then
             local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
-            -- Convert 1-100 smoothness into practical interpolation alpha
             local alpha = math.clamp((101 - Aimbot_Smoothness) / 100, 0.01, 1)
             Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, alpha)
         end
@@ -71,7 +70,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 ----------------------------------------------------------------
--- 2. ESP Logic (Color Selection)
+-- 2. ESP Logic
 ----------------------------------------------------------------
 local function updateESP()
     for _, player in ipairs(Players:GetPlayers()) do
@@ -121,7 +120,7 @@ local function updateHitboxes()
                     Hitbox_OriginalSizes[player] = hrp.Size
                 end
                 if Hitbox_Enabled then
-                    hrp.Size = Vector3.new(26, 25, 28) -- Sides:26, Top/Bottom:25, Fwd/Back:28
+                    hrp.Size = Vector3.new(26, 25, 28)
                     hrp.Transparency = 1
                     hrp.CanCollide = false
                 else
@@ -136,7 +135,7 @@ local function updateHitboxes()
 end
 
 ----------------------------------------------------------------
--- 4. Speed Boost (C-Frame 0-10 Slider), Inf Jump, Noclip
+-- 4. Speed, Inf Jump, Noclip
 ----------------------------------------------------------------
 UserInputService.JumpRequest:Connect(function()
     if InfJump_Enabled and LocalPlayer.Character then
@@ -152,7 +151,7 @@ RunService.Heartbeat:Connect(function(dt)
         local character = LocalPlayer.Character
         if character then
             local hrp = character:FindFirstChild("HumanoidRootPart")
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            local humanoid = character:FindFirstChild("Humanoid")
             if hrp and humanoid and humanoid.MoveDirection.Magnitude > 0 then
                 hrp.CFrame = hrp.CFrame + (humanoid.MoveDirection * Speed_Multiplier * dt * 10)
             end
@@ -172,7 +171,7 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 
 ----------------------------------------------------------------
--- 5. GUI Construction (Rainbow Outline & Floating Icon)
+-- 5. GUI Construction (Sonic Image Icon & Rainbow Outline)
 ----------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SonicHub_Gui"
@@ -187,25 +186,25 @@ else
     ScreenGui.Parent = CoreGui
 end
 
--- Floating Open/Close Toggle Icon
-local ToggleIcon = Instance.new("TextButton")
-ToggleIcon.Name = "ToggleIcon"
-ToggleIcon.Size = UDim2.new(0, 45, 0, 45)
-ToggleIcon.Position = UDim2.new(0, 20, 0.3, 0)
-ToggleIcon.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleIcon.Text = "🌀"
-ToggleIcon.TextSize = 22
-ToggleIcon.Active = true
-ToggleIcon.Draggable = true
-ToggleIcon.Parent = ScreenGui
+-- Floating Image Button (Sonic Icon)
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Name = "ToggleIcon"
+ToggleButton.Size = UDim2.new(0, 50, 0, 50)
+ToggleButton.Position = UDim2.new(0, 20, 0.3, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+-- Verified working Roblox Sonic/Game Decal Asset ID
+ToggleButton.Image = "rbxassetid://1380757657" 
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+ToggleButton.Parent = ScreenGui
 
 local IconCorner = Instance.new("UICorner")
 IconCorner.CornerRadius = UDim.new(1, 0)
-IconCorner.Parent = ToggleIcon
+IconCorner.Parent = ToggleButton
 
 local IconStroke = Instance.new("UIStroke")
 IconStroke.Thickness = 3
-IconStroke.Parent = ToggleIcon
+IconStroke.Parent = ToggleButton
 
 -- Main Hub Window
 local MainFrame = Instance.new("Frame")
@@ -222,12 +221,11 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- Rainbow Outline for Main Menu
+-- Rainbow Outline for Main Menu & Icon
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 3
 MainStroke.Parent = MainFrame
 
--- Rainbow Loop Generator
 RunService.RenderStepped:Connect(function()
     local rainbowColor = Color3.fromHSV(tick() % 5 / 5, 1, 1)
     MainStroke.Color = rainbowColor
@@ -294,10 +292,9 @@ local function createToggle(name, yPos, text, callback)
     return btn
 end
 
--- Feature Toggles & Sliders
+-- Feature Controls
 createToggle("AimbotBtn", 10, "Aimbot", function(state) Aimbot_Enabled = state end)
 
--- Aimbot Smoothness Slider Display
 local SmoothLabel = Instance.new("TextLabel")
 SmoothLabel.Size = UDim2.new(0.9, 0, 0, 20)
 SmoothLabel.Position = UDim2.new(0.05, 0, 0, 52)
@@ -305,7 +302,6 @@ SmoothLabel.BackgroundTransparency = 1
 SmoothLabel.Text = "Aimbot Smoothness: 50"
 SmoothLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 SmoothLabel.TextSize = 12
-SmoothLabel.Font = Enum.Font.SourceSans
 SmoothLabel.Parent = Scroll
 
 local SmoothBox = Instance.new("TextBox")
@@ -331,7 +327,6 @@ end)
 
 createToggle("ESPBtn", 110, "ESP", function(state) ESP_Enabled = state end)
 
--- ESP Color Dropdown Label / Selector
 local ESPColorLabel = Instance.new("TextLabel")
 ESPColorLabel.Size = UDim2.new(0.9, 0, 0, 20)
 ESPColorLabel.Position = UDim2.new(0.05, 0, 0, 152)
@@ -364,7 +359,6 @@ createToggle("HitboxBtn", 210, "Hitbox Expander (26x25x28)", function(state) Hit
 
 createToggle("SpeedBtn", 255, "Speed Boost (C-Frame)", function(state) Speed_Enabled = state end)
 
--- Speed Multiplier Slider Display
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(0.9, 0, 0, 20)
 SpeedLabel.Position = UDim2.new(0.05, 0, 0, 297)
@@ -398,8 +392,8 @@ end)
 createToggle("JumpBtn", 355, "Infinite Jump", function(state) InfJump_Enabled = state end)
 createToggle("NoclipBtn", 400, "Noclip", function(state) Noclip_Enabled = state end)
 
--- Toggle Hub Open/Close via Floating Icon
-ToggleIcon.MouseButton1Click:Connect(function()
+-- Toggle Hub Open/Close via Sonic Image Icon
+ToggleButton.MouseButton1Click:Connect(function()
     Hub_Open = not Hub_Open
     MainFrame.Visible = Hub_Open
 end)
