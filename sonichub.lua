@@ -40,7 +40,11 @@ local Settings = {
     MM2_EspInnocent = false,
     -- Rivals Specific
     Rivals_FPSBooster = false,
-    Rivals_Aimbot = false
+    Rivals_Aimbot = false,
+    Rivals_InvisibleHands = false,
+    -- GUI Theme
+    ThemeMode = "Rainbow", -- "Rainbow", "Red", "Green", "Dark Blue"
+    CustomThemeColor = Color3.fromRGB(255, 255, 255)
 }
 
 -- FOV Circle Visualizer
@@ -77,7 +81,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SonicHubGui"
 ScreenGui.Parent = game.CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 
--- Rainbow Outline Frame
+-- Outline Frame
 local RainbowBorder = Instance.new("Frame")
 RainbowBorder.Name = "RainbowBorder"
 RainbowBorder.Size = UDim2.new(0, 324, 0, 440)
@@ -101,7 +105,7 @@ MainFrame.Parent = RainbowBorder
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-Title.Text = "⚡ Sonic Hub (Rivals / MM2) ⚡"
+Title.Text = "⚡ Sonic Hub (Custom UI) ⚡"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 15
 Title.Font = Enum.Font.SourceSansBold
@@ -112,7 +116,7 @@ local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -45)
 Scroll.Position = UDim2.new(0, 5, 0, 40)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 1800)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 1950)
 Scroll.ScrollBarThickness = 6
 Scroll.Parent = MainFrame
 
@@ -221,6 +225,43 @@ local function CreateSlider(name, min, max, default, callback)
     end)
 end
 
+-- GUI Theme Selector Section
+local ThemeFrame = Instance.new("Frame")
+ThemeFrame.Size = UDim2.new(1, -10, 0, 45)
+ThemeFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+ThemeFrame.Parent = Scroll
+
+local ThemeLbl = Instance.new("TextLabel")
+ThemeLbl.Size = UDim2.new(1, 0, 0, 15)
+ThemeLbl.BackgroundTransparency = 1
+ThemeLbl.Text = "GUI Theme Color"
+ThemeLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+ThemeLbl.Font = Enum.Font.SourceSans
+ThemeLbl.TextSize = 13
+ThemeLbl.Parent = ThemeFrame
+
+local themes = {
+    {Name = "Red", Color = Color3.fromRGB(255, 0, 0), Mode = "Red"},
+    {Name = "Green", Color = Color3.fromRGB(0, 255, 0), Mode = "Green"},
+    {Name = "Dark Blue", Color = Color3.fromRGB(0, 0, 139), Mode = "Dark Blue"},
+    {Name = "Rainbow", Color = Color3.fromRGB(255, 255, 255), Mode = "Rainbow"}
+}
+
+for i, t in ipairs(themes) do
+    local tBtn = Instance.new("TextButton")
+    tBtn.Size = UDim2.new(1/4, -2, 0, 22)
+    tBtn.Position = UDim2.new((i-1)*(1/4), 1, 0, 18)
+    tBtn.BackgroundColor3 = t.Color
+    tBtn.Text = t.Name
+    tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tBtn.TextSize = 11
+    tBtn.Parent = ThemeFrame
+    tBtn.MouseButton1Click:Connect(function()
+        Settings.ThemeMode = t.Mode
+        Settings.CustomThemeColor = t.Color
+    end)
+end
+
 -- Feature Setup
 CreateToggle("Aimbot", function(state) Settings.AimbotEnabled = state end)
 CreateSlider("Smoothness (1-100)", 1, 100, 5, function(val) Settings.Smoothness = val end)
@@ -255,6 +296,7 @@ CreateToggle("Rivals FPS Booster (Mobile)", function(state)
 end)
 
 CreateToggle("Rivals Aimbot", function(state) Settings.Rivals_Aimbot = state end)
+CreateToggle("Invisible Hands (Rivals)", function(state) Settings.Rivals_InvisibleHands = state end)
 
 -- MM2 Specific ESP Section
 local MM2Header = Instance.new("TextLabel")
@@ -505,6 +547,9 @@ NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
 NameBox.Text = ""
 NameBox.PlaceholderText = "Type custom name..."
 NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameBox.TextNameBox.Text = ""
+NameBox.PlaceholderText = "Type custom name..."
+NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 NameBox.TextSize = 12
 NameBox.Parent = NameFrame
 
@@ -623,9 +668,22 @@ Players.PlayerAdded:Connect(SetupChatSpy)
 
 -- Main Engine Loop
 RunService.RenderStepped:Connect(function()
-    -- Rainbow Border Logic
-    local hue = (tick() % 3) / 3
-    RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+    -- GUI Theme Color Handling
+    if Settings.ThemeMode == "Rainbow" then
+        local hue = (tick() % 3) / 3
+        RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+    else
+        RainbowBorder.BackgroundColor3 = Settings.CustomThemeColor
+    end
+
+    -- Invisible Hands (Rivals) Loop
+    if Settings.Rivals_InvisibleHands and LocalPlayer.Character then
+        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and (part.Name == "Right Arm" or part.Name == "Left Arm" or part.Name == "RightHand" or part.Name == "LeftHand") then
+                part.Transparency = 1
+            end
+        end
+    end
 
     -- FOV Circle Drawing Update
     if Settings.AimbotEnabled or Settings.SilentAimEnabled or Settings.Rivals_Aimbot then
