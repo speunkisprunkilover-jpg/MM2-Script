@@ -1,11 +1,10 @@
--- [[ Sonic Hub - Mobile Optimized ]] --
+-- [[ Sonic Hub - Compact Mobile Version ]] --
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
-local MaterialService = game:GetService("MaterialService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
@@ -30,18 +29,18 @@ local Settings = {
 
 -- UI Setup (Mobile Friendly ScreenGui)
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SonicHubMobile"
+ScreenGui.Name = "SonicHubMobileCompact"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Mobile Toggle Open/Close Button (Floater)
+-- Mobile Toggle Open/Close Button (Smaller & Floater)
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Position = UDim2.new(0, 15, 0.4, 0)
+ToggleButton.Size = UDim2.new(0, 40, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0.4, 0)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 ToggleButton.Text = "⚡"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 22
+ToggleButton.TextSize = 18
 ToggleButton.Font = Enum.Font.SourceSansBold
 ToggleButton.Active = true
 ToggleButton.Draggable = true
@@ -55,17 +54,17 @@ local ToggleStroke = Instance.new("UIStroke")
 ToggleStroke.Thickness = 2
 ToggleStroke.Parent = ToggleButton
 
--- Rainbow Outer Frame
+-- Rainbow Outer Frame (Compacted Size: 260x340)
 local Outline = Instance.new("Frame")
-Outline.Size = UDim2.new(0, 320, 0, 440)
-Outline.Position = UDim2.new(0.5, -160, 0.5, -220)
+Outline.Size = UDim2.new(0, 260, 0, 340)
+Outline.Position = UDim2.new(0.5, -130, 0.5, -170)
 Outline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 Outline.Active = true
 Outline.Draggable = true
 Outline.Parent = ScreenGui
 
 local OutlineCorner = Instance.new("UICorner")
-OutlineCorner.CornerRadius = UDim.new(0, 10)
+OutlineCorner.CornerRadius = UDim.new(0, 8)
 OutlineCorner.Parent = Outline
 
 -- Main GUI Frame
@@ -76,30 +75,30 @@ Main.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 Main.Parent = Outline
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.CornerRadius = UDim.new(0, 6)
 MainCorner.Parent = Main
 
 -- Title Bar with Close Button
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Size = UDim2.new(1, 0, 0, 32)
 Title.BackgroundTransparency = 1
-Title.Text = "⚡ Sonic Hub (Mobile) ⚡"
+Title.Text = "⚡ Sonic Hub ⚡"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
+Title.TextSize = 15
 Title.Font = Enum.Font.SourceSansBold
 Title.Parent = Main
 
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 32, 0, 32)
-CloseBtn.Position = UDim2.new(1, -38, 0, 4)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -28, 0, 4)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 14
+CloseBtn.TextSize = 12
 CloseBtn.Parent = Main
 
 local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.CornerRadius = UDim.new(0, 4)
 CloseCorner.Parent = CloseBtn
 
 CloseBtn.MouseButton1Click:Connect(function()
@@ -112,17 +111,17 @@ end)
 
 -- Scroll Canvas
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1, -16, 1, -48)
-Scroll.Position = UDim2.new(0, 8, 0, 44)
+Scroll.Size = UDim2.new(1, -10, 1, -38)
+Scroll.Position = UDim2.new(0, 5, 0, 35)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 920)
-Scroll.ScrollBarThickness = 6
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 820)
+Scroll.ScrollBarThickness = 4
 Scroll.Parent = Main
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Parent = Scroll
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.Padding = UDim.new(0, 5)
 
 -- Rainbow Outline & Toggle Stroke Cycling Loop
 local hue = 0
@@ -133,20 +132,20 @@ RunService.RenderStepped:Connect(function()
     ToggleStroke.Color = rainbowColor
 end)
 
--- UI Toggle Creator Helper (Larger touch target for mobile)
+-- Compact UI Toggle Creator Helper
 local function CreateToggle(text, callback)
     local state = false
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 42)
+    btn.Size = UDim2.new(1, 0, 0, 32)
     btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     btn.Text = text .. ": OFF"
     btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 15
+    btn.TextSize = 13
     btn.Parent = Scroll
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0, 5)
     corner.Parent = btn
 
     btn.MouseButton1Click:Connect(function()
@@ -158,29 +157,29 @@ local function CreateToggle(text, callback)
     return btn
 end
 
--- UI Slider Creator Helper (Mobile Friendly Touch Tracking)
+-- Compact UI Slider Creator Helper
 local function CreateSlider(text, min, max, default, callback)
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(1, 0, 0, 52)
+    Frame.Size = UDim2.new(1, 0, 0, 42)
     Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     Frame.Parent = Scroll
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0, 5)
     corner.Parent = Frame
 
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, 0, 0, 24)
+    Label.Size = UDim2.new(1, 0, 0, 20)
     Label.BackgroundTransparency = 1
     Label.Text = text .. ": " .. default
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.SourceSansBold
-    Label.TextSize = 14
+    Label.TextSize = 12
     Label.Parent = Frame
 
     local SliderBar = Instance.new("TextButton")
-    SliderBar.Size = UDim2.new(0.9, 0, 0, 16)
-    SliderBar.Position = UDim2.new(0.05, 0, 0, 30)
+    SliderBar.Size = UDim2.new(0.9, 0, 0, 12)
+    SliderBar.Position = UDim2.new(0.05, 0, 0, 24)
     SliderBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     SliderBar.Text = ""
     SliderBar.Parent = Frame
@@ -278,7 +277,6 @@ CreateSlider("CFrame Speed", 1, 150, 10, function(v) Settings.CFrameSpeedValue =
 CreateToggle("Jump Boost", function(v) Settings.JumpBoost = v end)
 CreateSlider("Jump Boost Power", 5, 100, 50, function(v) Settings.JumpBoostValue = v end)
 
--- FPS Booster / Low Textures Toggle
 CreateToggle("FPS Booster (Low Text)", function(v)
     Settings.FPSBooster = v
     if v then
@@ -441,4 +439,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("Sonic Hub Mobile Loaded Successfully!")
+print("Sonic Hub Compact Mobile Loaded Successfully!")
