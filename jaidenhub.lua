@@ -15,7 +15,7 @@ local Settings = {
     ESPBox = false,
     ESPHighlight = false,
     SizeChanger = false,
-    SizeValue = 5, -- Default normal size
+    SizeValue = 5,
 }
 
 -- UI Setup (Mobile Friendly ScreenGui)
@@ -207,7 +207,7 @@ CreateToggle("Fake Lag", function(v) Settings.FakeLag = v end)
 CreateSlider("Fake Lag Intensity", 1, 250, 50, function(v) Settings.FakeLagValue = v end)
 
 CreateToggle("Size Changer", function(v) Settings.SizeChanger = v end)
-CreateSlider("Character Size", 0, 500, 5, function(v) Settings.SizeValue = v end)
+CreateSlider("Size Value", 0, 500, 5, function(v) Settings.SizeValue = v end)
 
 CreateToggle("ESP Master", function(v) Settings.ESP = v end)
 CreateToggle("ESP Box", function(v) Settings.ESPBox = v end)
@@ -215,21 +215,23 @@ CreateToggle("ESP Highlight", function(v) Settings.ESPHighlight = v end)
 
 -- --- FUNCTIONALITY LOOPS --- --
 
--- Fake Lag Rubber-band Loop (Teleports your replicated position backward to make others see you lagging while you move freely)
+-- Fake Lag (Client stays smooth, server/other players see you snap back / lag stutter)
 task.spawn(function()
     while true do
         if Settings.FakeLag and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = LocalPlayer.Character.HumanoidRootPart
-            local realPos = hrp.CFrame
+            local lastPos = hrp.CFrame
             
-            -- Wait based on user intensity slider
-            task.wait(Settings.FakeLagValue / 80)
+            -- Accumulate movement distance based on slider
+            local holdTime = Settings.FakeLagValue / 300
+            task.wait(holdTime)
             
-            if Settings.FakeLag and hrp then
-                local laggedPos = hrp.CFrame
-                -- Snap back to simulate network delay freeze for others
-                hrp.CFrame = realPos
-                task.wait(Settings.FakeLagValue / 160)
+            if Settings.FakeLag and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local currentPos = hrp.CFrame
+                -- Briefly force server position back to trick replication lag visual
+                hrp.CFrame = lastPos
+                RunService.RenderStepped:Wait()
+                hrp.CFrame = currentPos
             end
         else
             task.wait(0.2)
@@ -239,23 +241,15 @@ end)
 
 -- Size Changer Loop
 RunService.RenderStepped:Connect(function()
-    if Settings.SizeChanger and LocalPlayer.Character then
-        local char = LocalPlayer.Character
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            -- Scale character parts dynamically based on slider value
-            pcall(function()
-                local scale = math.clamp(Settings.SizeValue / 10, 0.1, 50)
-                if char:FindFirstChild("HumanoidRootPart") then
-                    -- Adjust character height / proportions safely using scale properties if available
-                    for _, v in pairs(char:GetChildren()) do
-                        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
-                            v.Size = Vector3.new(2, 2, 1) * scale
-                        end
-                    end
-                end
-            end)
-        end
+    if Settings.SizeChanger and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local humanoid = LocalPlayer.Character.Humanoid
+        local scale = Settings.SizeValue / 10 -- Scales nicely from tiny to giant
+        pcall(function()
+            humanoid.BodyDepthScale:FindFirstChildOfClass("NumberValue").Value = scale
+            humanoid.BodyWidthScale:FindFirstChildOfClass("NumberValue").Value = scale
+            humanoid.BodyHeightScale:FindFirstChildOfClass("NumberValue").Value = scale
+            humanoid.HeadScale:FindFirstChildOfClass("NumberValue").Value = scale
+        end)
     end
 end)
 
