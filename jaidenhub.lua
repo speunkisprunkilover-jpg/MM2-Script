@@ -10,10 +10,12 @@ local Camera = Workspace.CurrentCamera
 -- Configuration Settings
 local Settings = {
     FakeLag = false,
-    FakeLagValue = 50, -- Stutter intensity/delay
+    FakeLagValue = 50,
     ESP = false,
     ESPBox = false,
     ESPHighlight = false,
+    SizeChanger = false,
+    SizeValue = 5, -- Default normal size
 }
 
 -- UI Setup (Mobile Friendly ScreenGui)
@@ -44,10 +46,10 @@ ToggleStroke.Thickness = 2
 ToggleStroke.Color = Color3.fromRGB(255, 0, 255)
 ToggleStroke.Parent = ToggleButton
 
--- Outer Window Frame (Compact Size: 260x300)
+-- Outer Window Frame (Compact Size: 260x340)
 local Outline = Instance.new("Frame")
-Outline.Size = UDim2.new(0, 260, 0, 300)
-Outline.Position = UDim2.new(0.5, -130, 0.5, -150)
+Outline.Size = UDim2.new(0, 260, 0, 340)
+Outline.Position = UDim2.new(0.5, -130, 0.5, -170)
 Outline.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
 Outline.Active = true
 Outline.Draggable = true
@@ -104,7 +106,7 @@ local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -38)
 Scroll.Position = UDim2.new(0, 5, 0, 35)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 400)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
 Scroll.ScrollBarThickness = 4
 Scroll.Parent = Main
 
@@ -204,32 +206,55 @@ end
 CreateToggle("Fake Lag", function(v) Settings.FakeLag = v end)
 CreateSlider("Fake Lag Intensity", 1, 250, 50, function(v) Settings.FakeLagValue = v end)
 
+CreateToggle("Size Changer", function(v) Settings.SizeChanger = v end)
+CreateSlider("Character Size", 0, 500, 5, function(v) Settings.SizeValue = v end)
+
 CreateToggle("ESP Master", function(v) Settings.ESP = v end)
 CreateToggle("ESP Box", function(v) Settings.ESPBox = v end)
 CreateToggle("ESP Highlight", function(v) Settings.ESPHighlight = v end)
 
 -- --- FUNCTIONALITY LOOPS --- --
 
--- Fake Lag Implementation (Freezes character network replication periodically to simulate lag stutter)
+-- Fake Lag Rubber-band Loop (Teleports your replicated position backward to make others see you lagging while you move freely)
 task.spawn(function()
     while true do
         if Settings.FakeLag and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = LocalPlayer.Character.HumanoidRootPart
-            local oldPos = hrp.CFrame
+            local realPos = hrp.CFrame
             
-            -- Sleep based on slider value (scaled down to seconds)
-            task.wait(Settings.FakeLagValue / 100)
+            -- Wait based on user intensity slider
+            task.wait(Settings.FakeLagValue / 80)
             
-            -- Temporarily pause position sync / stutter movement
-            local freezeTime = (Settings.FakeLagValue / 200)
-            local t = tick()
-            while tick() - t < freezeTime do
-                if not Settings.FakeLag then break end
-                hrp.CFrame = oldPos
-                Task = RunService.RenderStepped:Wait()
+            if Settings.FakeLag and hrp then
+                local laggedPos = hrp.CFrame
+                -- Snap back to simulate network delay freeze for others
+                hrp.CFrame = realPos
+                task.wait(Settings.FakeLagValue / 160)
             end
         else
             task.wait(0.2)
+        end
+    end
+end)
+
+-- Size Changer Loop
+RunService.RenderStepped:Connect(function()
+    if Settings.SizeChanger and LocalPlayer.Character then
+        local char = LocalPlayer.Character
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            -- Scale character parts dynamically based on slider value
+            pcall(function()
+                local scale = math.clamp(Settings.SizeValue / 10, 0.1, 50)
+                if char:FindFirstChild("HumanoidRootPart") then
+                    -- Adjust character height / proportions safely using scale properties if available
+                    for _, v in pairs(char:GetChildren()) do
+                        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+                            v.Size = Vector3.new(2, 2, 1) * scale
+                        end
+                    end
+                end
+            end)
         end
     end
 end)
